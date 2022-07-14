@@ -11,7 +11,8 @@ class HLClient(object):
     def __init__(self):
         self.stage_one_url = "https://online.hl.co.uk/my-accounts/login-step-one"
         self.stage_two_url = "https://online.hl.co.uk/my-accounts/login-step-two"
-        self.accounts_url = "https://online.hl.co.uk/my-accounts/portfolio_overview"
+        self.accounts_url = "https://online.hl.co.uk/my-accounts"
+        self.portfolio_overview_url = "https://online.hl.co.uk/my-accounts/portfolio_overview"
         self.session = Session()
         self.cookie_jar: RequestsCookieJar = RequestsCookieJar()
 
@@ -62,10 +63,31 @@ class HLClient(object):
                 logging.error(f'Unable to load stage one url {self.stage_one_url}, get request returned status code '
                               f'{page.status_code}')
 
-    def get_my_accounts(self) -> pd.DataFrame:
+    def get_account_links(self) -> dict:
         if len(self.cookie_jar.keys()) > 0:
             with self.session as s:
                 get_request = s.get(url=self.accounts_url, cookies=self.cookie_jar)
+                if get_request.status_code == 200:
+                    get_context = bs(get_request.content, 'lxml')
+                    accounts_table = get_context.find_all("a",{"class": "product-name"})
+                    if len(accounts_table) > 0:
+                        output_dict = {}
+                        for tag in accounts_table:
+                            href = tag.attrs['href']
+                            account = str(tag.contents[0]).strip()
+                            output_dict[account] = href
+                        return output_dict
+                    else:
+                        logging.error(f"Could not find accounts table at {self.accounts_url}.")
+                else:
+                    logging.error(f"Unable to load {self.accounts_url}, get request returned status code "
+                                  f"{get_request.status_code}")
+        else: logging.error("Unable to get portfolio overview, session is not authenticated.")
+
+    def get_portfolio_overview(self) -> pd.DataFrame:
+        if len(self.cookie_jar.keys()) > 0:
+            with self.session as s:
+                get_request = s.get(url=self.portfolio_overview_url, cookies=self.cookie_jar)
                 if get_request.status_code == 200:
                     get_context = bs(get_request.content, 'lxml')
                     portfolio_table = get_context.find_all(id='portfolio')
@@ -75,9 +97,9 @@ class HLClient(object):
                         df.drop(columns=['Action'], inplace=True)
                         return df
                     else:
-                        logging.error(f"Unable to locate portfolio table at {self.accounts_url}")
+                        logging.error(f"Unable to locate portfolio table at {self.portfolio_overview_url}")
                 else:
-                    logging.error(f"Unable to load {self.accounts_url}, get request returned status code "
+                    logging.error(f"Unable to load {self.portfolio_overview_url}, get request returned status code "
                                   f"{get_request.status_code}")
         else:
-            logging.error("Unable to get accounts, session is not authenticated. Please login before proceeding.")
+            logging.error("Unable to get portfolio overview, session is not authenticated. Please login before proceeding.")
