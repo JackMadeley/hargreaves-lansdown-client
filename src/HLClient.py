@@ -62,12 +62,22 @@ class HLClient(object):
                 logging.error(f'Unable to load stage one url {self.stage_one_url}, get request returned status code '
                               f'{page.status_code}')
 
-    def get_my_accounts(self):
+    def get_my_accounts(self) -> pd.DataFrame:
         if len(self.cookie_jar.keys()) > 0:
             with self.session as s:
                 get_request = s.get(url=self.accounts_url, cookies=self.cookie_jar)
-                get_context = bs(get_request.content, 'lxml')
-                table = get_context.find_all(id='portfolio')[0]
-                print(table)
+                if get_request.status_code == 200:
+                    get_context = bs(get_request.content, 'lxml')
+                    portfolio_table = get_context.find_all(id='portfolio')
+                    if len(portfolio_table) > 0:
+                        html_string = f"<html><body>{str(portfolio_table[0])}</body></html>"
+                        df: pd.DataFrame = pd.read_html(html_string)[0]
+                        df.drop(columns=['Action'], inplace=True)
+                        return df
+                    else:
+                        logging.error(f"Unable to locate portfolio table at {self.accounts_url}")
+                else:
+                    logging.error(f"Unable to load {self.accounts_url}, get request returned status code "
+                                  f"{get_request.status_code}")
         else:
             logging.error("Unable to get accounts, session is not authenticated. Please login before proceeding.")
