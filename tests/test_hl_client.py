@@ -1,6 +1,7 @@
 from HLClient import HLClient
 import os
 import unittest
+from typing import List
 
 
 class TestHLClient(unittest.TestCase):
@@ -26,3 +27,13 @@ class TestHLClient(unittest.TestCase):
                               password=os.getenv(key='hl_password'), secure_number=os.getenv(key='hl_secure_number'))
         portfolio = self.client.get_portfolio_overview()
         self.assertEqual(portfolio.empty, False)
+
+    def test_get_account_dataframes(self):
+        if len(self.client.cookie_jar) == 0:
+            self.client.login(username=os.getenv(key='hl_username'), date_of_birth=os.getenv(key='hl_dob'),
+                              password=os.getenv(key='hl_password'), secure_number=os.getenv(key='hl_secure_number'))
+        dataframes = self.client.get_account_dataframes()
+        status: List[bool] = []
+        for df in dataframes:
+            status.append(not df.empty)
+        self.assertEqual(all(status), True)

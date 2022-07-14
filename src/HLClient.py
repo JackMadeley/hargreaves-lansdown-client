@@ -4,7 +4,7 @@ import logging
 from requests import Session
 from bs4 import BeautifulSoup as bs
 from requests.cookies import RequestsCookieJar
-
+from typing import List
 
 class HLClient(object):
 
@@ -102,4 +102,27 @@ class HLClient(object):
                     logging.error(f"Unable to load {self.portfolio_overview_url}, get request returned status code "
                                   f"{get_request.status_code}")
         else:
-            logging.error("Unable to get portfolio overview, session is not authenticated. Please login before proceeding.")
+            logging.error("Unable to get portfolio overview, session is not authenticated.")
+
+    def get_account_dataframes(self) -> List[pd.DataFrame]:
+        account_links = self.get_account_links()
+        if len(account_links.keys()) > 0:
+            output: List[pd.DataFrame] = []
+            with self.session as s:
+                for key, value in account_links.items():
+                    get_request = s.get(url=value, cookies=self.cookie_jar)
+                    if get_request.status_code == 200:
+                        get_context = bs(get_request.content, 'lxml')
+                        holdings_table = get_context.find_all(id='holdings-table')
+                        if len(holdings_table) > 0:
+                            html_string = f"<html><body>{str(holdings_table[0])}</body></html>"
+                            df: pd.DataFrame = pd.read_html(html_string)[0]
+                            df = df[df['Stock'] != 'Total']
+                            output.append(df)
+                        else:
+                            logging.error(f"No holdings table was found in {value}")
+                    else:
+                        logging.error(f"Could not access {value}, returned status code {get_request.status_code}")
+            return output
+        else:
+            logging.error("Unable to generate account dataframes as no account links were found")
