@@ -18,7 +18,6 @@ class TestHLClient(unittest.TestCase):
             self.client.login(username=os.getenv(key='hl_username'), date_of_birth=os.getenv(key='hl_dob'),
                               password=os.getenv(key='hl_password'), secure_number=os.getenv(key='hl_secure_number'))
         accounts: dict = self.client.get_account_links()
-        print(accounts)
         self.assertEqual(len(accounts.keys()) > 0, True)
 
     def test_get_portfolio_overview(self):
