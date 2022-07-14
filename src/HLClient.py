@@ -118,6 +118,8 @@ class HLClient(object):
                             html_string = f"<html><body>{str(holdings_table[0])}</body></html>"
                             df: pd.DataFrame = pd.read_html(html_string)[0]
                             df = df[df['Stock'] != 'Total']
+                            df.drop(columns=['Actions', 'Group order'], inplace=True)
+                            df['Account Name'] = key
                             output.append(df)
                         else:
                             logging.error(f"No holdings table was found in {value}")

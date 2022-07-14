@@ -1,3 +1,5 @@
+import pandas as pd
+
 from HLClient import HLClient
 import os
 import unittest
