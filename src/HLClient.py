@@ -60,7 +60,6 @@ class HLClient(object):
                 get_request = s.get(url=self.accounts_url, cookies=self.cookie_jar)
                 get_context = bs(get_request.content, 'lxml')
                 table = get_context.find_all(id='portfolio')[0]
-                df = pd.read_html(table)
-                print(df)
+                print(table)
         else:
             logging.error("Unable to get accounts, session is not authenticated. Please login before proceeding.")
