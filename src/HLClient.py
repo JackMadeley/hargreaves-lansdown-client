@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup as bs
 from requests.cookies import RequestsCookieJar
 from typing import List
 
+
 class HLClient(object):
 
     def __init__(self):
