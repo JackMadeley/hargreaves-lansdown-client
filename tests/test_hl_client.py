@@ -1,6 +1,4 @@
-import pandas as pd
-
-from HLClient import HLClient
+import HLClient
 import os
 import unittest
 from typing import List
