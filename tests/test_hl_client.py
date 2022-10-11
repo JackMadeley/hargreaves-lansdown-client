@@ -1,4 +1,4 @@
-import HLClient
+from HLClient import HLClient
 import os
 import unittest
 from typing import List
